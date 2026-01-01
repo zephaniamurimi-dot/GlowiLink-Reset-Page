@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>GlowiLink Password Reset</title>
+    <script>
+      // Parse token and redirect to app
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('access_token');
+      if (token) {
+        window.location = `glowilink://reset-password?access_token=${token}`;
+      } else {
+        document.write('<h2>Invalid link. Please try again.</h2>');
+      }
+    </script>
+  </head>
+  <body></body>
+</html>
