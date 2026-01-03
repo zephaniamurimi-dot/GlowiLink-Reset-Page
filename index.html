@@ -9,26 +9,36 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
     body {
       margin: 0;
-      font-family: sans-serif;
+      font-family: 'Poppins', sans-serif;
       background: linear-gradient(135deg, #FF8FF0, #5AC8FA, #FF7F50);
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
+      color: #fff;
     }
 
     .container {
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.15);
       padding: 30px;
-      border-radius: 20px;
+      border-radius: 25px;
       width: 90%;
       max-width: 420px;
       text-align: center;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     }
 
-    h2 { margin-bottom: 18px; color: #333; }
+    h2 { 
+      margin-bottom: 18px; 
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+    }
 
     .input-wrapper {
       position: relative;
@@ -38,9 +48,17 @@
     input {
       width: 100%;
       padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #ddd;
+      border-radius: 12px;
+      border: none;
       font-size: 16px;
+      outline: none;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      font-weight: 500;
+    }
+
+    input::placeholder {
+      color: rgba(255,255,255,0.7);
     }
 
     .toggle-emoji {
@@ -49,42 +67,58 @@
       top: 50%;
       transform: translateY(-50%);
       cursor: pointer;
-      font-size: 20px;
+      font-size: 22px;
       user-select: none;
+      transition: transform 0.2s;
+    }
+
+    .toggle-emoji.wiggle {
+      animation: wiggle 0.3s;
+    }
+
+    @keyframes wiggle {
+      0% { transform: translateY(-50%) rotate(0deg); }
+      25% { transform: translateY(-50%) rotate(-15deg); }
+      50% { transform: translateY(-50%) rotate(15deg); }
+      75% { transform: translateY(-50%) rotate(-10deg); }
+      100% { transform: translateY(-50%) rotate(0deg); }
     }
 
     button {
       padding: 12px;
       width: 100%;
-      background-color: #FF8FF0;
+      background: linear-gradient(135deg, #FF8FF0, #5AC8FA);
       color: white;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
       margin-top: 10px;
-      transition: background-color 0.2s;
+      transition: background 0.3s;
     }
 
     button:disabled {
-      background-color: #ccc;
+      background: rgba(200,200,200,0.6);
       cursor: not-allowed;
+      color: #fff;
     }
 
     .message { 
       margin-top: 14px; 
-      font-weight: bold; 
+      font-weight: 600; 
       transition: all 0.4s ease;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
     }
-    .error { color: red; }
-    .success { color: green; }
+    .error { color: #ffaaaa; }
+    .success { color: #aaffaa; }
 
-    /* Pulsing glow animation */
     @keyframes pulseGlow {
       0% { text-shadow: 0 0 5px #0f0; }
       50% { text-shadow: 0 0 20px #0f0; }
       100% { text-shadow: 0 0 5px #0f0; }
     }
+
     .success.pulse {
       animation: pulseGlow 1s infinite;
     }
@@ -122,21 +156,22 @@
     const toggleNew = document.getElementById("toggleNew");
     const toggleConfirm = document.getElementById("toggleConfirm");
 
-    // Show/hide emoji logic
+    // Emoji wiggle on click
+    function wiggleEmoji(el) {
+      el.classList.add("wiggle");
+      setTimeout(() => el.classList.remove("wiggle"), 300);
+    }
+
     toggleNew.addEventListener("click", () => {
-      if (pwInput.type === "password") {
-        pwInput.type = "text"; toggleNew.textContent = "🙈";
-      } else {
-        pwInput.type = "password"; toggleNew.textContent = "🙊";
-      }
+      pwInput.type = pwInput.type === "password" ? "text" : "password";
+      toggleNew.textContent = pwInput.type === "password" ? "🙊" : "🙈";
+      wiggleEmoji(toggleNew);
     });
 
     toggleConfirm.addEventListener("click", () => {
-      if (pw2Input.type === "password") {
-        pw2Input.type = "text"; toggleConfirm.textContent = "🙈";
-      } else {
-        pw2Input.type = "password"; toggleConfirm.textContent = "🙊";
-      }
+      pw2Input.type = pw2Input.type === "password" ? "text" : "password";
+      toggleConfirm.textContent = pw2Input.type === "password" ? "🙊" : "🙈";
+      wiggleEmoji(toggleConfirm);
     });
 
     // Parse access_token
@@ -160,11 +195,11 @@
           msg.textContent = "";
         } else if (pw !== pw2) {
           btn.disabled = true;
-          msg.textContent = "Passwords do not match ❌";
+          msg.textContent = "Passwords do not match ❌ 😿";
           msg.className = "message error";
         } else {
           btn.disabled = false;
-          msg.textContent = "Passwords match ✅";
+          msg.textContent = "Passwords match ✅ 😺";
           msg.className = "message success";
         }
       }
@@ -187,7 +222,7 @@
           const { error } = await sb.auth.updateUser({ password: pw });
           if (error) throw error;
 
-          msg.textContent = "Password reset successfully! ✅ Please return to the app to login.";
+          msg.textContent = "Password reset successfully! ✅ 😺 Please return to the app to login.";
           msg.className = "message success pulse";
 
         } catch (e) {
