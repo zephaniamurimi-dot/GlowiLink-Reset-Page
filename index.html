@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlowiLink Password Reset</title>
+
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #FF8FF0, #5AC8FA, #FF7F50);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    h2 { margin-bottom: 18px; color: #333; }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 12px;
+      width: 100%;
+      background-color: #FF8FF0;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background-color 0.2s;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .message {
+      margin-top: 14px;
+      font-weight: bold;
+    }
+
+    .error { color: red; }
+    .success { color: green; }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Reset Password</h2>
+
+    <input type="password" id="newPassword" placeholder="New Password" autocomplete="off" />
+    <input type="password" id="confirmPassword" placeholder="Confirm Password" autocomplete="off" />
+
+    <button id="resetBtn" disabled>Reset Password</button>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+    // -----------------------------
+    // 1. Initialize Supabase AFTER CDN loads
+    // -----------------------------
+    const supabaseUrl = "https://dwgthcvzdqnifvlrqqak.supabase.co";
+    const supabaseKey = "sb_publishable_C-yDm2AM-fpPCCDVwQXozw_UBAq6B-x";
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    const msg = document.getElementById("message");
+    const btn = document.getElementById("resetBtn");
+    const pwInput = document.getElementById("newPassword");
+    const pw2Input = document.getElementById("confirmPassword");
+
+    // -----------------------------
+    // 2. Parse access_token from URL hash
+    // -----------------------------
+    const hashParams = {};
+    window.location.hash
+      .substring(1)
+      .split("&")
+      .forEach(pair => {
+        const [key, value] = pair.split("=");
+        if (key && value) hashParams[key] = decodeURIComponent(value);
+      });
+
+    const accessToken = hashParams["access_token"];
+
+    if (!accessToken) {
+      msg.textContent = "Invalid or expired password reset link.";
+      msg.className = "message error";
+      btn.disabled = true;
+    } else {
+      // -----------------------------
+      // 3. Enable button only when passwords match
+      // -----------------------------
+      function checkInputs() {
+        btn.disabled = !(pwInput.value && pw2Input.value && pwInput.value === pw2Input.value);
+      }
+
+      pwInput.addEventListener("input", checkInputs);
+      pw2Input.addEventListener("input", checkInputs);
+
+      // Run once in case fields are pre-filled
+      checkInputs();
+
+      // -----------------------------
+      // 4. Handle password reset click
+      // -----------------------------
+      btn.addEventListener("click", async () => {
+        const pw = pwInput.value;
+        const pw2 = pw2Input.value;
+
+        if (!pw || !pw2 || pw !== pw2) return;
+
+        btn.disabled = true;
+        msg.textContent = "Updating password…";
+        msg.className = "message";
+
+        try {
+          // Supabase automatically uses the recovery token from URL
+          const { error } = await supabase.auth.updateUser({ password: pw });
+          if (error) throw error;
+
+          msg.textContent = "Password reset successfully!";
+          msg.className = "message success";
+
+          // -----------------------------
+          // 5. Redirect to login after 1.5s (replace URL below)
+          // -----------------------------
+          setTimeout(() => {
+            window.location.href = "https://your-real-login-page.com";
+          }, 1500);
+
+        } catch (e) {
+          msg.textContent = e.message || "Something went wrong.";
+          msg.className = "message error";
+          btn.disabled = false;
+        }
+      });
+    }
+  </script>
+</body>
+</html>
