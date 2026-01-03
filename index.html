@@ -6,7 +6,7 @@
   <title>GlowiLink Password Reset</title>
 
   <!-- Supabase JS CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
   <style>
     body {
@@ -57,11 +57,7 @@
       cursor: not-allowed;
     }
 
-    .message {
-      margin-top: 14px;
-      font-weight: bold;
-    }
-
+    .message { margin-top: 14px; font-weight: bold; }
     .error { color: red; }
     .success { color: green; }
   </style>
@@ -71,38 +67,34 @@
   <div class="container">
     <h2>Reset Password</h2>
 
-    <input type="password" id="newPassword" placeholder="New Password" autocomplete="off" />
-    <input type="password" id="confirmPassword" placeholder="Confirm Password" autocomplete="off" />
+    <input type="password" id="newPassword" placeholder="New Password" autocomplete="new-password" />
+    <input type="password" id="confirmPassword" placeholder="Confirm Password" autocomplete="new-password" />
 
     <button id="resetBtn" disabled>Reset Password</button>
-
     <div id="message" class="message"></div>
   </div>
 
   <script>
-    // -----------------------------
-    // 1. Initialize Supabase AFTER CDN loads
-    // -----------------------------
-    const supabaseUrl = "https://dwgthcvzdqnifvlrqqak.supabase.co";
-    const supabaseKey = "sb_publishable_C-yDm2AM-fpPCCDVwQXozw_UBAq6B-x";
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    // -------------------------------
+    // 1. Initialize Supabase client
+    // -------------------------------
+    const SUPABASE_URL = "https://dwgthcvzdqnifvlrqqak.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_C-yDm2AM-fpPCCDVwQXozw_UBAq6B-x";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const msg = document.getElementById("message");
-    const btn = document.getElementById("resetBtn");
     const pwInput = document.getElementById("newPassword");
     const pw2Input = document.getElementById("confirmPassword");
+    const btn = document.getElementById("resetBtn");
+    const msg = document.getElementById("message");
 
-    // -----------------------------
+    // -------------------------------
     // 2. Parse access_token from URL hash
-    // -----------------------------
+    // -------------------------------
     const hashParams = {};
-    window.location.hash
-      .substring(1)
-      .split("&")
-      .forEach(pair => {
-        const [key, value] = pair.split("=");
-        if (key && value) hashParams[key] = decodeURIComponent(value);
-      });
+    window.location.hash.substring(1).split("&").forEach(pair => {
+      const [key, value] = pair.split("=");
+      if (key && value) hashParams[key] = decodeURIComponent(value);
+    });
 
     const accessToken = hashParams["access_token"];
 
@@ -111,25 +103,31 @@
       msg.className = "message error";
       btn.disabled = true;
     } else {
-      // -----------------------------
-      // 3. Enable button only when passwords match
-      // -----------------------------
+
+      // -------------------------------
+      // 3. Enable button ONLY when passwords match
+      // -------------------------------
       function checkInputs() {
-        btn.disabled = !(pwInput.value && pw2Input.value && pwInput.value === pw2Input.value);
+        const pw = pwInput.value.trim();
+        const pw2 = pw2Input.value.trim();
+        btn.disabled = !(pw && pw2 && pw === pw2);
       }
 
+      // Listen for user typing
       pwInput.addEventListener("input", checkInputs);
       pw2Input.addEventListener("input", checkInputs);
+      pwInput.addEventListener("keyup", checkInputs);
+      pw2Input.addEventListener("keyup", checkInputs);
 
-      // Run once in case fields are pre-filled
+      // Run once on page load
       checkInputs();
 
-      // -----------------------------
+      // -------------------------------
       // 4. Handle password reset click
-      // -----------------------------
+      // -------------------------------
       btn.addEventListener("click", async () => {
-        const pw = pwInput.value;
-        const pw2 = pw2Input.value;
+        const pw = pwInput.value.trim();
+        const pw2 = pw2Input.value.trim();
 
         if (!pw || !pw2 || pw !== pw2) return;
 
@@ -138,19 +136,18 @@
         msg.className = "message";
 
         try {
-          // Supabase automatically uses the recovery token from URL
-          const { error } = await supabase.auth.updateUser({ password: pw });
+          // Set session with the recovery token
+          await sb.auth.setSession({ access_token: accessToken });
+
+          // Update password
+          const { error } = await sb.auth.updateUser({ password: pw });
           if (error) throw error;
 
           msg.textContent = "Password reset successfully!";
           msg.className = "message success";
 
-          // -----------------------------
-          // 5. Redirect to login after 1.5s (replace URL below)
-          // -----------------------------
-          setTimeout(() => {
-            window.location.href = "https://your-real-login-page.com";
-          }, 1500);
+          // OPTIONAL: redirect after reset
+          // setTimeout(() => { window.location.href = "/"; }, 1500);
 
         } catch (e) {
           msg.textContent = e.message || "Something went wrong.";
